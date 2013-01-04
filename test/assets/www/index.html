@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Notification Example</title>
+
+    <script type="text/javascript" charset="utf-8" src="cordova-2.2.0.js"></script>
+    <script type="text/javascript" charset="utf-8">
+
+    // Wait for Cordova to load
+    //
+    document.addEventListener("deviceready", onDeviceReady, false);
+    var logEl = null;
+
+	function log(msg){
+		if (logEl){
+			logEl.innerHTML = logEl.innerHTML + "\n" + msg;
+		}
+	}
+    // Cordova is ready
+    //
+    function onDeviceReady() {
+    	logEl = document.getElementById("log");
+    	log("Device is ready");
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, fsOK, fail);
+    }
+
+	function fsOK(fileSystem){
+		log("FileSystem (" + fileSystem.name + ") OK");
+		log("Root is: " + fileSystem.root.fullPath);
+		
+		var reader = fileSystem.root.createReader();
+		reader.readEntries(logDirectoryContent, fail);
+		fileSystem.root.getFile("test.txt", {create:true}, writeFile, fail);
+		fileSystem.root.getFile("test.txt", {create:true}, readFile, fail);
+	}
+	
+	function writeFile(fileEntry){
+		log("Writing file..");
+		fileEntry.createWriter(function(writerOb) {
+			writerOb.onwrite = function() {
+				log("File has been succesfully written");
+			}
+			
+			// go to the end of the file...
+			writerOb.seek(writerOb.length);
+			writerOb.write("Test at " + new Date().toString() + "\n");
+		})
+	}
+	
+	function readFile(fileEntry) {
+		log("Reading file..");
+	    var fileReader = new FileReader();
+	    fileReader.onloadend = function(e) {
+	    	log("File has been succesfully read: ");
+	        log(e.target.result);
+	    }
+	    fileReader.readAsText(fileEntry);
+	}
+
+	function logDirectoryContent(items){
+		if (items.length && items.length > 0){
+			log("Content of directory:");
+			for (i = 0; i < items.length; i++){
+				var entryType = "D";
+				if (items[i].isFile){
+					entryType = "F";
+				}
+				log("[" + entryType + "]" + items[i].fullPath);
+			}
+		} else {
+			log("No entries to list");
+		}
+	}
+	
+	function gotFileEntry(fileEntry){
+		log("FileEntry OK");
+	}
+	
+	function fail(e){
+		log("Fail: " + e.toString());
+	}
+	
+    // alert dialog dismissed
+    function alertDismissed() {
+        // do something
+    }
+
+    // Show a custom alertDismissed
+    //
+    function showAlert() {
+        navigator.notification.alert(
+            'You are the winner!',  // message
+            alertDismissed,         // callback
+            'Game Over',            // title
+            'Done'                  // buttonName
+        );
+    }
+
+    </script>
+  </head>
+  <body>
+  	<h1>File reader</h1>
+    <textarea id="log" style="width: 100%; height: 20em;">Log:</textarea>
+  </body>
+</html>
